@@ -1,482 +1,481 @@
-//
+#include <iostream>
 // Created by hussa on 7/14/2024.
 //
 
 #ifndef DS1_AVLTREE_H
 #define DS1_AVLTREE_H
+#include <iostream>
+#include "iostream"
+#include "pair.h"
+
+
 template<class T>
-class node{
-    int key;
-    T data;
-    int height;
-    node *left;
-    node *right;
+class node {
 public:
-    node()=default;
-    node(T data,int key);
+    pair key;
+    node<T>* left;
+    node<T>* right;
+    int height;
+    T value;
+
+    node(T value, pair key);
     ~node();
-    void setData(T data);
-    T getData()const;
-    void setLeft(node *left);
-    void setright(node *right);
-    node* getleft()const;
-    node* getright()const;
-    int getHeight()const;
-    void setHeight(int height);
-    int getKey()const;
 };
+
 template<class T>
-class AVLtree{
+node<T>::node(T value, pair key) : value(value), key(key), left(nullptr), right(nullptr), height(1) {}
+
+template<class T>
+node<T>::~node() {
+    delete left;
+    delete right;
+}
+template<class T>
+class AVLtree {
     node<T>* head;
     int sizeOfTree;
-    T maxData;
-    T minData;
-    int max(int first,int second);
-    node<T>* insertHelp(node<T>* head,T value,int key);
+    int maxData;
+    int minData;
+    int maxId;
+    int minId;
+
+    int max(int first, int second);
+    node<T>* insertHelp(node<T>* head, T value, pair key);
     node<T>* gelgolLL(node<T>* head);
-    node<T>* gelgolRR(node<T>*head);
-    int calculateBF(node<T>*head)const;
-    node<T>* removeHelp(node<T>* head,T value);
-    void checkmax(T value);
-    void checkmin(T value);
+    node<T>* gelgolRR(node<T>* head);
+    int calculateBF(node<T>* head) const;
+    node<T>* removeHelp(node<T>* head, pair key);
+    void checkMax(int key, int id);
+    void checkMin(int key, int id);
+    node<T>* findMin(node<T>* head) const;
+    node<T>* findMax(node<T>* head) const;
 
 public:
     AVLtree();
-    void insert(T value,int key);
-    void remove(T value);
-    int size()const;
-    node<T>* find(int key)const;
-    node<T>* findmin(node<T>* head)const;
-    node<T>* findmax(node<T>* head)const;
-    T getmax()const;
-    T getmin()const;
+    void insert(T value, int key, int id);
+    void remove(T value, int key, int id);
+    int size() const;
+    node<T>* find(pair key) const;
+    int getMax() const;
+    int getMin() const;
+    int getMaxId() const;
+    int getMinId() const;
     ~AVLtree();
+    void printTree(node<T>* node1, int space) const;
+    void print() const;
 };
 
+template<class T>
+AVLtree<T>::AVLtree() : head(nullptr), sizeOfTree(0), maxData(0), minData(0), maxId(0), minId(0) {}
 
-//
-// Created by hussa on 7/1/2024.
-//
-//node cpp
 template<class T>
-node<T>::node(T data,int key) {
-    this->data=data;
-    this->height=1;
-    this->left= nullptr;
-    this->right= nullptr;
-    this->key=key;
-}
-template<class T>
-int node<T>::getKey() const {
-    return this->key;
-}
-template<class T>
-node<T>::~node() {
-    if (left != nullptr) {
-        delete left;
-    }
-    if (right != nullptr) {
-        delete right;
-    }
-    //delete (&this->data);
-}
-template<class T>
-void node<T>::setLeft(node<T> *left) {
-    this->left=left;
-}
-template<class T>
-void node<T>::setright(node<T> *right) {
-    this->right=right;
-}
-template<class T>
-node<T> *node<T>::getleft() const {
-    return this->left;
-}
-template<class T>
-node<T> *node<T>::getright() const {
-    return this->right;
-}
-template<class T>
-void node<T>::setData(T data) {
-    this->data=data;
-}
-template<class T>
-T node<T>::getData() const {
-    return this->data;
-}
-template<class T>
-int node<T>::getHeight() const {
-    if(this== nullptr)return 0;
-    return this->height;
-}
-template<class T>
-void node<T>::setHeight(int height) {
-    this->height=height;
+int AVLtree<T>::getMinId() const {
+    return this->minId;
 }
 
-
-
-
-//AVLtree cpp
 template<class T>
-AVLtree<T>::AVLtree() {
-    this->head= nullptr;
-    this->sizeOfTree=0;
-    this->maxData= T();
-    this->minData=T();
+int AVLtree<T>::getMaxId() const {
+    return this->maxId;
 }
+
 template<class T>
 int AVLtree<T>::size() const {
     return this->sizeOfTree;
 }
+
 template<class T>
 AVLtree<T>::~AVLtree() {
     delete this->head;
 }
-template<class T>
-void AVLtree<T>::insert(T value,int key) {
-    ///need to do
-    this->head=insertHelp(this->head,value,key);
-    if(this->maxData<value)
-    {
-        this->maxData=value;
-    }
-    if(this->minData>value)
-    {
-        this->minData=value;
-    }
 
+template<class T>
+void AVLtree<T>::insert(T value, int key, int id) {
+    pair a(key, id);
+    this->head = insertHelp(this->head, value, a);
+    if (this->sizeOfTree == 1) {
+        this->maxData = key;
+        this->minData = key;
+        this->maxId = id;
+        this->minId = id;
+    } else {
+        if (this->maxData < key) {
+            this->maxData = key;
+            this->maxId = id;
+        }
+        if (this->minData > key) {
+            this->minData = key;
+            this->minId = id;
+        }
+        if (this->maxData == key && this->maxId < id) {
+            this->maxId = id;
+        }
+        if (this->minData == key && this->minId > id) {
+            this->minId = id;
+            }
+        }
 }
+
 template<class T>
 int AVLtree<T>::max(int first, int second) {
-    if(first>second)
+    if(first > second)
     {
         return first;
     }
     return second;
 }
+
 template<class T>
-node<T>* AVLtree<T>::insertHelp(node<T> *head, T value,int key)  {
-    if(head== nullptr)
-    {
+node<T>* AVLtree<T>::insertHelp(node<T>* head, T value, pair key) {
+    if (head == nullptr) {
         this->sizeOfTree++;
-        head= new node<T>(value,key);
-        return head;
+        return new node<T>(value, key);
     }
-    if(value<head->getData())
+    if (key < head->key)
     {
-        head->setLeft(insertHelp(head->getleft(), value,key));
+        head->left = insertHelp(head->left, value, key);
     }
-    else if(value>head->getData())
+    else if (key > head->key)
     {
-        head->setright(insertHelp(head->getright(), value,key));
+        head->right = insertHelp(head->right, value, key);
     }
     else
     {
         return head;
     }
-    head->setHeight(AVLtree<T>::max(head->getleft()->getHeight(),head->getright()->getHeight())+1);
-    //need to do gelgol
-    if(head!=nullptr) {
-        int BF ,BFL,BFR;
-        if(head->getleft()!= nullptr) {
-            BFL = AVLtree<T>::calculateBF(head->getleft());
-        }
-        else{
-            BFL=0;
-        }
-        if(head->getright()!= nullptr) {
-            BFR = AVLtree<T>::calculateBF(head->getright());
-        }
-        else{
-            BFR=0;
-        }
-        BF= calculateBF(head);
-        if (BF == 2 && BFL >= 0) {
-            return AVLtree<T>::gelgolLL(head);
-        }
-        if (BF == 2 && BFL == -1) {
-            head->setLeft(gelgolRR(head->getleft()));
-            return gelgolLL(head);
-        }
-        if (BF == -2 && BFR <= 0) {
-            return AVLtree<T>::gelgolRR(head);
-        }
-        if (BF == -2 && BFR == 1) {
-            head->setright(gelgolLL(head->getright()));
-            return gelgolRR(head);
-        }
-    }
-    return head;
 
+    int leftHeight = 0;
+    if (head->left != nullptr) {
+        leftHeight = head->left->height;
+    }
+
+    int rightHeight = 0;
+    if (head->right != nullptr) {
+        rightHeight = head->right->height;
+    }
+
+    head->height = 1 + max(leftHeight, rightHeight);
+    int balance = calculateBF(head);
+    int leftBF=calculateBF(head->left);
+    int rightBF=calculateBF(head->right);
+    if (balance > 1 && leftBF >= 0) {
+        return gelgolLL(head);
+    }
+    if (balance > 1 && leftBF < 0) {
+        head->left = gelgolRR(head->left);
+        return gelgolLL(head);
+    }
+    if (balance < -1 && rightBF <= 0) {
+        return gelgolRR(head);
+    }
+    if (balance < -1 && rightBF > 0) {
+        head->right = gelgolLL(head->right);
+        return gelgolRR(head);
+    }
+
+    return head;
 }
+
 template<class T>
-int AVLtree<T>::calculateBF(node<T> *head) const {
+int AVLtree<T>::calculateBF(node<T>* head) const {
     if (head == nullptr) {
         return 0;
     }
+
     int leftHeight = 0;
+    if (head->left != nullptr) {
+        leftHeight = head->left->height;
+    }
+
     int rightHeight = 0;
-    if (head->getleft() != nullptr) {
-        leftHeight = head->getleft()->getHeight();
+    if (head->right != nullptr) {
+        rightHeight = head->right->height;
     }
-    if (head->getright() != nullptr) {
-        rightHeight = head->getright()->getHeight();
-    }
+
     return leftHeight - rightHeight;
 }
+
 template<class T>
-node<T>* AVLtree<T>::find(int key)const {
-    node<T>* current= this->head;
-    while(current!= nullptr)
-    {
-        if(current->getKey()==key)
+node<T>* AVLtree<T>::find(pair key) const {
+    node<T>* current = this->head;
+    while (current != nullptr) {
+        if (current->key > key)
+        {
+            current = current->left;
+        }
+        else if (current->key < key)
+        {
+            current = current->right;
+        }
+        else
         {
             return current;
-        }
-        if (key > current->getKey()) {
-            current = current->getright();
-        }
-        if (key < current->getKey()) {
-            current = current->getleft();
         }
     }
     return nullptr;
 }
-template<class T>
-node<T> *AVLtree<T>::gelgolLL(node<T> *head) {
-    node<T> *newHead = head->getleft();
-    head->setLeft(newHead->getright());
-    newHead->setright(head);
 
-    head->setHeight(max(head->getleft()->getHeight(), head->getright()->getHeight()) + 1);
-    newHead->setHeight(max(newHead->getleft()->getHeight(), newHead->getright()->getHeight()) + 1);
+
+template<class T>
+node<T>* AVLtree<T>::gelgolLL(node<T>* head) {
+    node<T>* newHead = head->left;
+    head->left = newHead->right;
+    newHead->right = head;
+
+    int leftHeight = 0;
+    int rightHeight = 0;
+
+    if (head->left) {
+        leftHeight = head->left->height;
+    }
+    if (head->right) {
+        rightHeight = head->right->height;
+    }
+    head->height = max(leftHeight, rightHeight) + 1;
+
+    leftHeight = 0;
+    rightHeight = 0;
+
+    if (newHead->left) {
+        leftHeight = newHead->left->height;
+    }
+    if (newHead->right) {
+        rightHeight = newHead->right->height;
+    }
+    newHead->height = max(leftHeight, rightHeight) + 1;
+
+    return newHead;
+}
+
+
+
+template<class T>
+node<T>* AVLtree<T>::gelgolRR(node<T>* head) {
+    node<T>* newHead = head->right;
+    head->right = newHead->left;
+    newHead->left = head;
+
+    int leftHeightHead = 0;
+    int rightHeightHead = 0;
+
+    if (head->left != nullptr) {
+        leftHeightHead = head->left->height;
+    } else {
+        leftHeightHead = 0;
+    }
+
+    if (head->right != nullptr) {
+        rightHeightHead = head->right->height;
+    } else {
+        rightHeightHead = 0;
+    }
+
+    head->height = max(leftHeightHead, rightHeightHead) + 1;
+
+    int leftHeightNewHead = 0;
+    int rightHeightNewHead = 0;
+
+    if (newHead->left != nullptr) {
+        leftHeightNewHead = newHead->left->height;
+    } else {
+        leftHeightNewHead = 0;
+    }
+
+    if (newHead->right != nullptr) {
+        rightHeightNewHead = newHead->right->height;
+    } else {
+        rightHeightNewHead = 0;
+    }
+
+    newHead->height = max(leftHeightNewHead, rightHeightNewHead) + 1;
 
     return newHead;
 }
 
 template<class T>
-node<T> *AVLtree<T>::gelgolRR(node<T> *head) {
-    node<T> *newHead = head->getright();
-    head->setright(newHead->getleft());
-    newHead->setLeft(head);
-
-    head->setHeight(max(head->getleft()->getHeight(), head->getright()->getHeight()) + 1);
-    newHead->setHeight(max(newHead->getleft()->getHeight(), newHead->getright()->getHeight()) + 1);
-
-    return newHead;
+node<T>* AVLtree<T>::findMin(node<T>* head) const {
+    node<T>* current = head;
+    while (current->left != nullptr) {
+        current = current->left;
+    }
+    return current;
 }
+
 template<class T>
-node<T> *AVLtree<T>::findmin(node<T>*head) const {
+node<T>* AVLtree<T>::findMax(node<T>* head) const {
+    node<T>* current = head;
+    while (current->right != nullptr) {
+        current = current->right;
+    }
+    return current;
+}
+
+template<class T>
+void AVLtree<T>::checkMax(int key, int id) {
+    if (head != nullptr) {
+        if (this->maxData == key && this->maxId == id) {
+            node<T>* toget = findMax(this->head);
+            this->maxData = toget->key.getKey();
+            this->maxId = toget->key.getId();
+        }
+    }
+}
+
+template<class T>
+void AVLtree<T>::checkMin(int key, int id) {
+    if (head != nullptr) {
+        if (this->minData == key && this->minId == id) {
+            node<T>* toget = findMin(this->head);
+            this->minData = toget->key.getKey();
+            this->minId = toget->key.getId();
+        }
+    }
+}
+
+template<class T>
+void AVLtree<T>::remove(T value, int key, int id) {
+    pair a(key, id);
+    this->head = removeHelp(this->head, a);
+    checkMax(key, id);
+    checkMin(key, id);
+}
+
+template<class T>
+node<T>* AVLtree<T>::removeHelp(node<T>* head, pair key) {
     if (head == nullptr) {
-        return nullptr;
-    }
-    node<T> *tmp=head;
-    while(tmp->getleft()!= nullptr)
-    {
-        tmp=tmp->getleft();
-    }
-    return tmp;
-}
-template<class T>
-node<T> *AVLtree<T>::findmax(node<T>*head) const {
-    if (head == nullptr) {
-        return nullptr;
-    }
-    node<T> *tmp=head;
-    while(tmp->getright()!= nullptr)
-    {
-        tmp=tmp->getright();
-    }
-    return tmp;
-}
-template<class T>
-void AVLtree<T>::checkmax(T value) {
-    if(head!= nullptr) {
-        if (this->maxData < value)
-        {
-            return;
-        }
-        else if (this->maxData > value)
-        {
-            return;
-        }
-        else
-        {
-            this->maxData = findmax(this->head)->getData();
-        }
-    }
-    else
-    {
-        this->maxData=T();
-    }
-}
-template<class T>
-void AVLtree<T>::checkmin(T value) {
-    if(head!= nullptr) {
-        if (this->minData < value)
-        {
-            return;
-        }
-        else if (this->minData > value)
-        {
-            return;
-        }
-        else
-        {
-            this->minData = findmin(this->head)->getData();
-        }
-    }
-    else
-    {
-        this->minData=T();
-    }
-}
-template<class T>
-T AVLtree<T>::getmin() const {
-    return this->minData;
-}
-template<class T>
-void AVLtree<T>::remove(T value) {
-    this->head=removeHelp(this->head,value);
-    checkmin(value);
-    checkmax(value);
-
-}
-template<class T>
-node<T>* AVLtree<T>::removeHelp(node<T> *head, T value){
-    //need to implement this
-    if (head == nullptr)
-    {
         return head;
     }
-
-    if (value < head->getData())
+    if (key < head->key)
     {
-        head->setLeft(removeHelp(head->getleft(), value));
+        head->left = removeHelp(head->left, key);
     }
-    else if (value > head->getData())
+    else if (key > head->key)
     {
-        head->setright(removeHelp(head->getright(), value));
+        head->right = removeHelp(head->right, key);
     }
     else
     {
-        if (head->getleft() == nullptr || head->getright() == nullptr)
-        {
-            node<T>* tmp= nullptr;
-            if(head->getleft()!= nullptr){
-                tmp=head->getleft();
+        if (head->left == nullptr || head->right == nullptr) {
+            node<T>* temp;
+            if (head->left != nullptr) {
+                temp = head->left;
+            } else {
+                temp = head->right;
             }
-            if(head->getright()!= nullptr)
-            {
-                tmp=head->getright();
-            }
-            if (tmp == nullptr)
-            {
-                tmp = head;
+
+            if (temp == nullptr) {
+                temp = head;
                 head = nullptr;
+            } else {
+                *head = *temp;
             }
-            else
-            {
-                *head = *tmp;
-            }
-
-            delete tmp;
-            sizeOfTree--;
+            delete temp;
+        } else {
+            node<T>* temp = findMin(head->right);
+            head->key = temp->key;
+            head->value = temp->value;
+            head->right = removeHelp(head->right, temp->key);
         }
-        else
-        {
-            node<T>* tmp = findmin(head->getright());
-            head->setData(tmp->getData());
-            head->setright(removeHelp(head->getright(), tmp->getData()));
-        }
+        this->sizeOfTree--;
     }
-
     if (head == nullptr) {
         return head;
     }
-    head->setHeight(max(head->getleft()->getHeight(), head->getright()->getHeight()) + 1);
 
+    if (head->left != nullptr && head->right != nullptr)
+    {
+        if (head->left->height > head->right->height)
+        {
+            head->height = 1 + head->left->height;
+        }
+        else
+        {
+            head->height = 1 + head->right->height;
+        }
+    }
+    else if (head->left != nullptr)
+    {
+        head->height = 1 + head->left->height;
+    }
+    else if (head->right != nullptr) {
+        head->height = 1 + head->right->height;
+    }
+    else {
+        head->height = 1;
+    }
 
-//gelgol
-    if(head!=nullptr) {
-        int BF ,BFL,BFR;
-        if(head->getleft()!= nullptr) {
-            BFL = AVLtree<T>::calculateBF(head->getleft());
-        }
-        else{
-            BFL=0;
-        }
-        if(head->getright()!= nullptr) {
-            BFR = AVLtree<T>::calculateBF(head->getright());
-        }
-        else{
-            BFR=0;
-        }
-        BF= calculateBF(head);
-        if (BF == 2 && BFL >= 0) {
-            return AVLtree<T>::gelgolLL(head);
-        }
-        if (BF == 2 && BFL == -1) {
-            head->setLeft(gelgolRR(head->getleft()));
-            return gelgolLL(head);
-        }
-        if (BF == -2 && BFR <= 0) {
-            return AVLtree<T>::gelgolRR(head);
-        }
-        if (BF == -2 && BFR == 1) {
-            head->setright(gelgolLL(head->getright()));
-            return gelgolRR(head);
-        }
+    int balance = calculateBF(head);
+
+    if (balance > 1 && calculateBF(head->left) >= 0) {
+        return gelgolLL(head);
+    }
+    if (balance > 1 && calculateBF(head->left) < 0) {
+        head->left = gelgolRR(head->left);
+        return gelgolLL(head);
+    }
+    if (balance < -1 && calculateBF(head->right) <= 0) {
+        return gelgolRR(head);
+    }
+    if (balance < -1 && calculateBF(head->right) > 0) {
+        head->right = gelgolLL(head->right);
+        return gelgolRR(head);
     }
     return head;
-
 }
+
 template<class T>
-T AVLtree<T>::getmax() const {
+int AVLtree<T>::getMax() const {
     return this->maxData;
 }
-/*int main()
+
+template<class T>
+int AVLtree<T>::getMin() const {
+    return this->minData;
+}
+
+template<class T>
+void AVLtree<T>::printTree(node<T>* node1, int space) const {
+    if (node1 == nullptr) return;
+    space += 10;
+    printTree(node1->right, space);
+    std::cout << std::endl;
+    for (int i = 10; i < space; i++) {
+        std::cout << " ";
+    }
+    std::cout << node1->key.getKey() << " (ID: " << node1->key.getId() << ")" << std::endl;
+    printTree(node1->left, space);
+}
+
+template<class T>
+void AVLtree<T>::print() const {
+    printTree(this->head, 0);
+}
+/*
+#include "memory"
+int main()
 {
-    AVLtree<int> tree;
-    tree.insert(5,5);
-    tree.insert(10,10);
-    tree.insert(15,15);
-    tree.insert(5,5);
-    tree.insert(16,16);
-    tree.insert(17,17);
-    tree.insert(1,1);
-    tree.insert(2,2);
-    tree.insert(2,2);
-    tree.insert(2,2);
-    tree.insert(2,2);
-    tree.insert(0,0);
-    for(int i=0;i<1000;i++)
-    {
-        tree.insert(1000-i,1000-i);
-        tree.insert(i,i);
-        tree.insert(2*i,2*i);
-    }
-    std::cout<<"get to here"<<std::endl;
-    tree.remove(1998);
-    std::cout<<tree.getmax()<<std::endl;
-    tree.remove(0);
-    std::cout<<tree.getmin()<<std::endl;
-    tree.remove(5);
-    tree.remove(0);
-    tree.remove(15);
-    tree.remove(17);
-    tree.remove(3);
-    tree.remove(2);
-    if (tree.find(100)!= nullptr)
-    {
-        std::cout<<"find"<<std::endl;
-    }
-    for(int i=1999;i>=0;i--)
-        tree.remove(i);
+    std::shared_ptr<int>s(new int (10));
+    AVLtree<std::shared_ptr<int>>tree= AVLtree<std::shared_ptr<int>>();
+    tree.insert(s,10,10);
+    std::shared_ptr<int>s2(new int (5));
+    //std::cout<<"gothere"<<std::endl;
+    tree.insert(s2,5,5);
+    std::shared_ptr<int>s3(new int (7));
+    //std::cout<<"gothere"<<std::endl;
+    tree.insert(s3,7,7);
+    std::shared_ptr<int>s4(new int (12));
+    //std::cout<<"gothere"<<std::endl;
+    tree.insert(s4,12,12);
+    // tree.remove(s4,12,12);
+    std::shared_ptr<int>s5(new int (20));
+    tree.insert(s5,20,20);
+    std::shared_ptr<int>s6(new int (25));
+    tree.insert(s6,25,25);
+    std::cout<<tree.getMaxId()<<std::endl;
 
-    std::cout<<tree.getmax()<<std::endl;
-    std::cout<<"sucsess"<<std::endl;
-}*/
 
+    //std::cout<<"gothere"<<std::endl;
+    tree.print();
+
+}
+ */
 #endif //DS1_AVLTREE_H

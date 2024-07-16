@@ -14,11 +14,11 @@
 #define PIRRATES24SPRING_WET1_H_
 
 #include "wet1util.h"
-
+#include "pirateShip.h"
 class Ocean {
 private:
-    AVLtree<std::shared_ptr<pirate>> *pirateById;
-    AVLtree<std::shared_ptr<ship>> *ships;
+
+
     int min(int num1,int num2)const;
     //
     // Here you may add anything you want
@@ -26,7 +26,11 @@ private:
     
 public:
     // <DO-NOT-MODIFY> {
-    
+
+    // for testing, I added these row:
+    AVLtree<std::shared_ptr<ship>> *ships;
+    AVLtree<std::shared_ptr<pirate>> *pirateById;
+
     Ocean();
 
     virtual ~Ocean();
@@ -50,6 +54,9 @@ public:
     output_t<int> get_richest_pirate(int shipId);
 
     StatusType ships_battle(int shipId1,int shipId2);
+
+    /// for testing:
+    void print_avl_tree() const;
 
     // } </DO-NOT-MODIFY>
 };
