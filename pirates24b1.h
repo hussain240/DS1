@@ -18,18 +18,19 @@
 class Ocean {
 private:
 
-
+ // for testing, I added these row:
+  
     int min(int num1,int num2)const;
     //
     // Here you may add anything you want
     //
+    AVLtree<std::shared_ptr<ship>> *ships;
+    AVLtree<std::shared_ptr<pirate>> *pirateById;
     
 public:
     // <DO-NOT-MODIFY> {
 
-    // for testing, I added these row:
-    AVLtree<std::shared_ptr<ship>> *ships;
-    AVLtree<std::shared_ptr<pirate>> *pirateById;
+ 
 
     Ocean();
 
@@ -55,8 +56,7 @@ public:
 
     StatusType ships_battle(int shipId1,int shipId2);
 
-    /// for testing:
-    void print_avl_tree() const;
+
 
     // } </DO-NOT-MODIFY>
 };

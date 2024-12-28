@@ -12,19 +12,23 @@ class pirate{
 protected:
     int pirateId;
     int treasure;
+    std::weak_ptr<ship> currentShip;
     unsigned int place;
-    std::shared_ptr<ship> currentShip;
+
 public:
     pirate()=default;
     pirate(int pirateId,int treasure, std::shared_ptr<ship> currentShip,unsigned int place);
     virtual ~pirate()=default;
     void setTreasure(int change);
+    void setPlace(unsigned int place);
     int getTreasure();
     int getTreasurePure();
     unsigned int getPlace()const;
     int getId()const;
     void setShip(std::shared_ptr<ship> nextShip);
     std::shared_ptr<ship> getShip();
+
+
 };
 
 
@@ -49,6 +53,8 @@ public:
     int getFirstPirate()const;
     void removePirate(std::shared_ptr<pirate>toRemove,std::shared_ptr<pirate>toRemove2);
     void changeTreasure(int change);
+    void removePirateTreasure(std::shared_ptr<pirate>toRemove);
+    void insertPirateTreasure(std::shared_ptr<pirate>toInsert) ;
 };
 
 

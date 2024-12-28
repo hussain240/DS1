@@ -1,9 +1,9 @@
 #include "pirates24b1.h"
-//#include "pirateShip.cpp"
+
 Ocean::Ocean()
 {
-  pirateById = new AVLtree<std::shared_ptr<pirate>>();
-  ships = new AVLtree<std::shared_ptr<ship>>();
+  pirateById = new AVLtree<std::shared_ptr<pirate>>() ;
+  ships = new AVLtree<std::shared_ptr<ship>>() ;
 }
 
 Ocean::~Ocean()
@@ -43,29 +43,30 @@ StatusType Ocean::remove_ship(int shipId)
     {
         return StatusType::INVALID_INPUT;
     }
-
+    if(ships->size()==0)
+    {
+        return StatusType::FAILURE;
+    }
     try{
-        std::shared_ptr<ship> toRemove=nullptr;
-        if(ships->size()!=0)
-        {
-            pair a=pair(shipId,shipId);
-            toRemove =ships->find(a)->value;
-        }
-        if(toRemove== nullptr)
+        pair shipIdPair=pair(shipId,shipId);
+
+        node<std::shared_ptr<ship>>* shipNode= ships->find(shipIdPair);
+
+        if(shipNode== nullptr)
         {
             return StatusType::FAILURE;
         }
-        else if(toRemove->sizeOfPirates()!=0)
+        auto shipObj=shipNode->value;
+        if(shipObj->sizeOfPirates()!=0)
         {
             return StatusType::FAILURE;
         }
-        ships->remove(toRemove,shipId,shipId);
+        ships->remove(shipObj,shipId,shipId);
         return StatusType::SUCCESS;
     }
     catch (const std::bad_alloc& bad)
     {
         return StatusType::ALLOCATION_ERROR;
-
     }
     return StatusType::FAILURE;
 }
@@ -76,34 +77,30 @@ StatusType Ocean::add_pirate(int pirateId, int shipId, int treasure)
     {
         return StatusType::INVALID_INPUT;
     }
+    if(ships->size()==0)
+    {
+        return StatusType::FAILURE;
+    }
     try{
-        std::shared_ptr<ship>toShip=nullptr;
-        if(ships->size()!=0)
-        {
-            pair shipIdpair=pair(shipId,shipId);
-           toShip =this->ships->find(shipIdpair)->value;
-        }
-        if(toShip== nullptr)
+        pair shipIdpair=pair(shipId,shipId);
+        auto ShipNode =this->ships->find(shipIdpair);
+
+        if(ShipNode == nullptr)
         {
             return StatusType::FAILURE;
         }
-        std::shared_ptr<pirate>toBeAddedPirate=nullptr;
-        if(pirateById->size()!=0)
+        pair a=pair(pirateId,pirateId);
+        auto toPirate=pirateById->find(a);
+        if(toPirate != nullptr)
         {
-           pair shipIdpair = pair(pirateId, pirateId);
-            auto foundPirateNode = this->pirateById->find(shipIdpair);
-            if (foundPirateNode != nullptr) { // pirate was found in pirateById
-                return StatusType::FAILURE;
-            }
+            return StatusType::FAILURE;
         }
+        auto shipObj=ShipNode->value;
 
-//////////////////////////////////////////////////////need to implement
-        
-        int last=toShip->getLastPlace();
-
-        toBeAddedPirate = std::make_shared<pirate>(pirateId,treasure,toShip,last);
-        this->pirateById->insert(toBeAddedPirate,pirateId,pirateId);
-        toShip->insertPirate(toBeAddedPirate,pirateId,toBeAddedPirate);
+        int last = shipObj->getLastPlace();
+        std::shared_ptr<pirate> pirateObj (new pirate(pirateId,treasure-shipObj->getShTreasure(),shipObj,last));
+        this->pirateById->insert(pirateObj,pirateId,pirateId);
+        shipObj->insertPirate(pirateObj,pirateId,pirateObj);
         return StatusType::SUCCESS;
     }
     catch (const std::bad_alloc& bad)
@@ -121,21 +118,24 @@ StatusType Ocean::remove_pirate(int pirateId)
     {
         return StatusType::INVALID_INPUT;
     }
+    if(pirateById->size()==0)
+    {
+        return StatusType::FAILURE;
+    }
     try{
 
-        std::shared_ptr<pirate>topirate=nullptr;
-        if(pirateById->size()!=0)
-        {
-            pair a=pair(pirateId,pirateId);
-            topirate=this->pirateById->find(a)->value;
-        }
-        if(topirate== nullptr)
+        pair pirateIdPair=pair(pirateId,pirateId);
+        auto pirateNode= this->pirateById->find(pirateIdPair);
+
+        if(pirateNode== nullptr)
         {
             return StatusType::FAILURE;
         }
-        ////////////////////////need to implement///////////////////////
-        topirate->getShip()->removePirate(topirate,topirate);
-        this->pirateById->remove(topirate,pirateId,pirateId);
+        auto pirateObj=pirateNode->value;
+
+       std::shared_ptr<ship> ship1= pirateObj->getShip();
+       ship1->removePirate(pirateObj,pirateObj);
+        this->pirateById->remove(pirateObj,pirateId,pirateId);
         return StatusType::SUCCESS;
     }
     catch (const std::bad_alloc& bad)
@@ -150,43 +150,49 @@ StatusType Ocean::treason(int sourceShipId, int destShipId) {
     if (sourceShipId <= 0 || destShipId <= 0 || destShipId == sourceShipId) {
         return StatusType::INVALID_INPUT;
     }
+    try{
     auto sourceShipNode = ships->find(pair(sourceShipId, sourceShipId));
     auto destShipNode = ships->find(pair(destShipId, destShipId));
 
-    // Check if the ships were found
-    if (!sourceShipNode || !destShipNode) {
-        return StatusType::FAILURE; // Ship not found
+
+    if (sourceShipNode==nullptr || destShipNode==nullptr) {
+        return StatusType::FAILURE; 
     }
 
     std::shared_ptr<ship> sourceShip = sourceShipNode->value;
     std::shared_ptr<ship> destShip = destShipNode->value;
 
-    // Additional null checks for the shared_ptr instances
-    if (!sourceShip || !destShip) {
-        return StatusType::FAILURE; // Ship not found or invalid
+    if (sourceShip==nullptr || destShip==nullptr) {
+        return StatusType::FAILURE;
     }
 
     if (sourceShip->sizeOfPirates() == 0) {
-        return StatusType::FAILURE; // No pirates on source ship
+        return StatusType::FAILURE; 
     }
 
     int longestStayingPirateId = sourceShip->getFirstPirate();
-    auto longestStayingPirate = pirateById->find(pair(longestStayingPirateId
-            , longestStayingPirateId)) ->value;
+    pair a=pair(longestStayingPirateId, longestStayingPirateId);
+    auto longestStayingPirate = pirateById->find(a) ->value;
+
+        sourceShip->removePirate(longestStayingPirate, longestStayingPirate);
+        longestStayingPirate->setShip(destShip);
+        longestStayingPirate->setTreasure( sourceShip->getShTreasure() - destShip->getShTreasure());
+         destShip->insertPirate(longestStayingPirate, longestStayingPirateId, longestStayingPirate);
+         
 
 
-    sourceShip->removePirate(longestStayingPirate, longestStayingPirate);
 
 
-    longestStayingPirate->setShip(destShip);
-
-
-    destShip->insertPirate(longestStayingPirate, longestStayingPirateId, longestStayingPirate);
-
-    longestStayingPirate->setTreasure( sourceShip->getShTreasure() - destShip->getShTreasure());
+        //longestStayingPirate->setTreasure( sourceShip->getShTreasure() - destShip->getShTreasure());
 
     return StatusType::SUCCESS;
-
+    }
+    catch (const std::bad_alloc& bad)
+    {
+        return StatusType::ALLOCATION_ERROR;
+    }
+    return StatusType::FAILURE;
+    
 }
 
 
@@ -196,19 +202,23 @@ StatusType Ocean::update_pirate_treasure(int pirateId, int change)
     {
         return StatusType::INVALID_INPUT;
     }
+    if(pirateById->size()==0)
+    {
+        return StatusType::FAILURE;
+    }
     try{
-        std::shared_ptr<pirate>toPirate=nullptr;
-        if(pirateById->size()!=0)
-        {
+        std::shared_ptr<pirate>toPirate = nullptr;
             pair a = pair(pirateId,pirateId);
-             toPirate= this->pirateById->find(a)->value;
-        }
-        if(toPirate== nullptr)
-        {
-            return StatusType::FAILURE;
-        }
+            auto checkPirate= this->pirateById->find(a);
+        if(checkPirate== nullptr)
+            {
+                return StatusType::FAILURE;
+            }
+        toPirate=checkPirate->value;
+        toPirate->getShip()->removePirateTreasure(toPirate);
         toPirate->setTreasure(change);
-        //////////////////////////need to remove from pirateByTreasure and insert again////////////
+        toPirate->getShip()->insertPirateTreasure(toPirate);
+        
         return StatusType::SUCCESS;
     }
     catch (const std::bad_alloc& bad)
@@ -224,84 +234,80 @@ output_t<int> Ocean::get_treasure(int pirateId)
     {
         return output_t<int>(StatusType::INVALID_INPUT);
     }
-    try{
-        int treasure;
-        std::shared_ptr<pirate>toget =nullptr;
-        if(pirateById->size()!=0)
-        {
-            pair a=pair(pirateId,pirateId);
-            toget= this->pirateById->find(a)->value;
-        }
-        if(toget== nullptr)
-        {
-            return output_t<int>(StatusType::FAILURE);
-        }
-        treasure=toget->getTreasure();
-        return output_t<int>(treasure);
-
+    if(pirateById->size()== 0) {
+        return output_t<int>(StatusType::FAILURE);
     }
+    try{
+            pair pirateIdPair = pair(pirateId, pirateId);
+            auto PirateNode = this->pirateById->find(pirateIdPair);
+
+            if(PirateNode == nullptr) {
+                return output_t<int>(StatusType::FAILURE);
+            }
+            auto Pirate = PirateNode->value;
+            int treasure = Pirate->getTreasure();
+            return output_t<int>(treasure);
+    }
+
     catch (const std::bad_alloc& bad) {
         return output_t<int>(StatusType::ALLOCATION_ERROR);
     }
-    return 0;
 }
 
-output_t<int> Ocean::get_cannons(int shipId)
-{
-    if(shipId<=0)
+output_t<int> Ocean::get_cannons(int shipId){
+    if(shipId <=0 )
     {
         return output_t<int>(StatusType::INVALID_INPUT);
     }
+    if(ships->size()==0)
+    {
+        return output_t<int>(StatusType::FAILURE);
+    }
     try{
-        std::shared_ptr<ship>toget=nullptr;
-        if(ships->size()!=0)
-        {
-            pair a=pair(shipId,shipId);
-            toget=this->ships->find(a)->value;
-        }
-    
-        if(toget== nullptr)
+
+        pair shipIdPair=pair(shipId, shipId);
+        auto shipNode=this->ships->find(shipIdPair);
+
+        if(shipNode== nullptr)
         {
             return output_t<int>(StatusType::FAILURE);
         }
-        return output_t<int>(toget->getcannons());
+
+        auto shipObj = shipNode->value;
+        return output_t<int>(shipObj->getcannons());
     }
+
     catch (const std::bad_alloc& bad)
     {
         return output_t<int>(StatusType::ALLOCATION_ERROR);
-
     }
-    return 0;
 }
 
 output_t<int> Ocean::get_richest_pirate(int shipId)
 {
-    if(shipId<=0)
-    {
+    if (shipId <= 0) {
         return output_t<int>(StatusType::INVALID_INPUT);
     }
-    try{
-
-        std::shared_ptr<ship>toShip=nullptr;
-        if(ships->size()!=0)
-        {
-            pair a=pair(shipId,shipId);
-            toShip= this->ships->find(a)->value;
-        }
-        if(toShip== nullptr)
-        {
+    if (ships->size() == 0) {
+        return output_t<int>(StatusType::FAILURE);
+    }
+    try {
+        pair shipIdPair = pair(shipId, shipId);
+        auto shipNode = ships->find(shipIdPair);
+        if (shipNode == nullptr) {
             return output_t<int>(StatusType::FAILURE);
         }
-        //getRich is O(1)
-        ////////////////////wrong this return the pirate with the biggest Id/////////////////
-        return output_t<int>(toShip->getRich());
-    }
-    catch (const std::bad_alloc& bad)
+        auto shipObj = shipNode->value;
+        if (shipObj->sizeOfPirates() == 0) {
+            return output_t<int>(StatusType::FAILURE);
+        }
+        return shipObj->getRich();
+
+    } 
+    catch (const std::bad_alloc& bad) 
     {
         return output_t<int>(StatusType::ALLOCATION_ERROR);
-
     }
-    return 0;
 }
 
 StatusType Ocean::ships_battle(int shipId1,int shipId2)
@@ -310,30 +316,33 @@ StatusType Ocean::ships_battle(int shipId1,int shipId2)
     {
         return StatusType::INVALID_INPUT;
     }
+
+    if(ships->size()<=1) {
+         return StatusType::FAILURE;
+    }
+
     try{
-        std::shared_ptr<ship>ship1=nullptr;
-        if(ships->size()!=0)
-        {
-            pair a=pair(shipId1,shipId1);
-              ship1= this->ships->find(a)->value;
-        }
-        if(ship1== nullptr)
+            pair ship1IdPair=pair(shipId1, shipId1);
+            auto shipNode1= this->ships->find(ship1IdPair);
+
+        if(shipNode1== nullptr)
         {
             return StatusType::FAILURE;
         }
-        std::shared_ptr<ship>ship2=nullptr;
-        if(ships->size()!=0)
-        {
-            pair b=pair(shipId2,shipId2);
-          ship2=this->ships->find(b)->value;
-        }
-        if(ship2== nullptr)
+
+            pair ship2IdPair=pair(shipId2, shipId2);
+         auto ship2Node  =this->ships->find(ship2IdPair);
+
+        if(ship2Node== nullptr)
         {
             return StatusType::FAILURE;
         }
+
+        std::shared_ptr<ship>ship1=shipNode1->value;
+        std::shared_ptr<ship>ship2=ship2Node->value;
         ////////////////////////////////need to implement
-        int cannons1=ship1->getcannons(),size1=ship1->sizeOfPirates();
-        int cannons2=ship2->getcannons(),size2=ship2->sizeOfPirates();
+        int cannons1 = ship1->getcannons(), size1 = ship1->sizeOfPirates();
+        int cannons2 = ship2->getcannons(),size2 = ship2->sizeOfPirates();
         if(min(size1,cannons1)< min(size2,cannons2))
         {
             ship1->changeTreasure(-1 * ship2->sizeOfPirates());
@@ -362,14 +371,10 @@ int Ocean::min(int num1, int num2) const {
     }
     return num2;
 }
-void Ocean::print_avl_tree() const
-{
-    ships->print();
-}
 
 /// Test the treason function
 
-#include "cassert"
+/*#include "cassert"
 
 void testTreasonFunction() {
     Ocean ocean;
@@ -392,9 +397,9 @@ void testTreasonFunction() {
     sourceShip->changeTreasure(5);
     destShip->changeTreasure(4);
 
-    StatusType result = ocean.treason(sourceShipId, destShipId);
+    //StatusType result = ocean.treason(sourceShipId, destShipId);
 
-    int longestPiratesrcId = sourceShip->getFirstPirate();
+   // int longestPiratesrcId = sourceShip->getFirstPirate();
     int longestPiratedestId = destShip->getFirstPirate();
 
     pair idpair =pair(longestPiratedestId,longestPiratedestId);
@@ -408,11 +413,39 @@ void testTreasonFunction() {
     assert(longestPiratesrcId != pirateId1); // Assuming pirateId1 was the longest-staying pirate
     assert(longestPiratedestId == pirateId1); // Ensure pirateId1 is now in the destination ship
     std::cout<<longestPiratesrc->getTreasurePure()<<std::endl;
-
+        ocean.print_avl_tree();
     std::cout << "Test passed: Treason function works as expected." << std::endl;
 }
+*/
+// int main() {
+//     Ocean o;
+//     o.add_ship(1,12);
+//     o.add_ship(2,15);
+//     o.add_pirate(5,1,1);
+//     o.add_pirate(7,1,30);
+//     // for(int i = 1 ; i < 8 ; i++){
+//     //     o.add_pirate(i,1,i);
+//     // }
+//     //     for(int i = 8 ; i < 27 ; i++){
+//     //     o.add_pirate(i,2,i);
+//     // }
 
-int main() {
-    testTreasonFunction();
-    return 0;
-}
+//     // for(int i = 1 ; i < 8 ; i++ ){
+//     //     o.treason(1,2);
+//     // }
+//     // o.remove_pirate(26);
+
+//     o.update_pirate_treasure(5,50);
+//     o.update_pirate_treasure(7,50);
+//     std:: cout << o.get_treasure(5).ans() << std ::endl;
+//     std:: cout << o.get_richest_pirate(1).ans() << std ::endl;
+//     std:: cout << "_____________________" << std ::endl;
+//     // std:: cout << o.get_richest_pirate(2).ans() << std ::endl;
+//     // std:: cout << "_____________________" << std ::endl;
+//     o.ships->find(pair(1,1))->value->pirateByTreasure->print();
+
+
+
+    
+//     return 0;
+// }
